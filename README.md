@@ -77,8 +77,6 @@ lyrics/
 ├── sidepanel.html         # Side panel UI
 ├── sidepanel.js           # Side panel logic
 ├── sidepanel.css          # Side panel styling
-├── sidepanel.scss         # SCSS source file
-├── sidepanel.min.css      # Minified CSS
 └── images/                # Extension icons
     ├── icon-16.png
     ├── icon-48.png
