@@ -1,9 +1,46 @@
 :root {
   --lyrics-font: "Crimson Pro", ui-serif, Georgia, serif;
-  --ui-font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --ui-font:
+    "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* Light mode colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --text-primary: #000000;
+  --text-secondary: #555555;
+  --text-tertiary: #777777;
+  --border-color: #cccccc;
+  --error-color: #ff0000;
+  --loader-bg: #f3f3f3;
+  --loader-primary: #3498db;
+  --switch-thumb: #e8e8e8;
+  --switch-track: #e8e8e8;
+  --switch-active: #888888;
+  --switch-outline: #000000;
+}
+
+body.dark-mode {
+  /* Dark mode colors */
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #909090;
+  --border-color: #444444;
+  --error-color: #ff6b6b;
+  --loader-bg: #333333;
+  --loader-primary: #64b5f6;
+  --switch-thumb: #404040;
+  --switch-track: #505050;
+  --switch-active: #777777;
+  --switch-outline: #e0e0e0;
 }
 
 body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   padding: 10px;
 }
@@ -22,14 +59,45 @@ body #wrapper #title {
 
 body #wrapper #artist {
   font-size: 1.25rem;
-  color: #555;
+  color: var(--text-secondary);
   margin-bottom: 0.4rem;
 }
 
 body #wrapper #album,
 body #wrapper #release-year {
   font-size: 0.8rem;
-  color: #777;
+  color: var(--text-tertiary);
+}
+
+body #wrapper #toggleWrapper {
+  position: fixed;
+  top: 0.8rem;
+  right: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body #wrapper #toggleWrapper #toggleLabel {
+  font-size: 0.6rem;
+  margin-top: 0.2rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+body .disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+body .disabled .switch {
+  pointer-events: none;
+}
+
+body #wrapper #darkModeToggle {
+  position: fixed;
+  top: 0.8rem;
+  left: 0.6rem;
 }
 
 body #content {
@@ -54,17 +122,19 @@ body #content #lyrics pre {
 }
 
 body #content #lyrics .error {
-  color: red;
+  color: var(--error-color);
   font-size: 1.2rem;
   margin-top: 20vh;
 }
 
+body #content hr {
+  border-color: var(--border-color);
+}
+
 body #content #lyrics .loader {
   margin-top: 24vh;
-  border: 0.6rem solid #f3f3f3;
-  /* Light grey */
-  border-top: 0.6rem solid #3498db;
-  /* Blue */
+  border: 0.6rem solid var(--loader-bg);
+  border-top: 0.6rem solid var(--loader-primary);
   border-radius: 50%;
   width: 4rem;
   height: 4rem;
@@ -77,5 +147,362 @@ body #content #lyrics .loader {
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+/* For toggle switch */
+/* From Uiverse.io by Voxybuns */
+/* The switch - the box around the slider */
+.switch {
+  /* Variables */
+  --switch_width: 2.4em;
+  --switch_height: 1.2em;
+  --thumb_color: var(--switch-thumb);
+  --track_color: var(--switch-track);
+  --track_active_color: var(--switch-active);
+  --outline_color: var(--switch-outline);
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: var(--switch_width);
+  height: var(--switch_height);
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  box-sizing: border-box;
+  border: 2px solid var(--outline_color);
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--track_color);
+  transition: 0.15s;
+  border-radius: var(--switch_height);
+}
+
+.slider:before {
+  box-sizing: border-box;
+  position: absolute;
+  content: "";
+  height: var(--switch_height);
+  width: var(--switch_height);
+  border: 2px solid var(--outline_color);
+  border-radius: 100%;
+  left: -2px;
+  bottom: -2px;
+  background-color: var(--thumb_color);
+  transform: translateY(-0.2em);
+  box-shadow: 0 0.2em 0 var(--outline_color);
+  transition: 0.15s;
+}
+
+input:checked + .slider {
+  background-color: var(--track_active_color);
+}
+
+input:focus-visible + .slider {
+  box-shadow: 0 0 0 2px var(--track_active_color);
+}
+
+/* Raise thumb when hovered */
+input:hover + .slider:before {
+  transform: translateY(-0.3em);
+  box-shadow: 0 0.3em 0 var(--outline_color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(calc(var(--switch_width) - var(--switch_height)))
+    translateY(-0.2em);
+}
+
+/* Raise thumb when hovered & checked */
+input:hover:checked + .slider:before {
+  transform: translateX(calc(var(--switch_width) - var(--switch_height)))
+    translateY(-0.3em);
+  box-shadow: 0 0.3em 0 var(--outline_color);
+}
+
+/* For dark mode toggle */
+/* From Uiverse.io by RiccardoRapelli */ 
+.switch2 {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch2 #input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider2 {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #2196f3;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.sun-moon {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: yellow;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+#input:checked + .slider2 {
+  background-color: black;
+}
+
+#input:focus + .slider2 {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+#input:checked + .slider2 .sun-moon {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+  background-color: white;
+  -webkit-animation: rotate-center 0.6s ease-in-out both;
+  animation: rotate-center 0.6s ease-in-out both;
+}
+
+.moon-dot {
+  opacity: 0;
+  transition: 0.4s;
+  fill: gray;
+}
+
+#input:checked + .slider2 .sun-moon .moon-dot {
+  opacity: 1;
+}
+
+.slider2.round {
+  border-radius: 34px;
+}
+
+.slider2.round .sun-moon {
+  border-radius: 50%;
+}
+
+#moon-dot-1 {
+  left: 10px;
+  top: 3px;
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  z-index: 4;
+}
+
+#moon-dot-2 {
+  left: 2px;
+  top: 10px;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  z-index: 4;
+}
+
+#moon-dot-3 {
+  left: 16px;
+  top: 18px;
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  z-index: 4;
+}
+
+#light-ray-1 {
+  left: -8px;
+  top: -8px;
+  position: absolute;
+  width: 43px;
+  height: 43px;
+  z-index: -1;
+  fill: white;
+  opacity: 10%;
+}
+
+#light-ray-2 {
+  left: -50%;
+  top: -50%;
+  position: absolute;
+  width: 55px;
+  height: 55px;
+  z-index: -1;
+  fill: white;
+  opacity: 10%;
+}
+
+#light-ray-3 {
+  left: -18px;
+  top: -18px;
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: -1;
+  fill: white;
+  opacity: 10%;
+}
+
+.cloud-light {
+  position: absolute;
+  fill: #eee;
+  animation-name: cloud-move;
+  animation-duration: 6s;
+  animation-iteration-count: infinite;
+}
+
+.cloud-dark {
+  position: absolute;
+  fill: #ccc;
+  animation-name: cloud-move;
+  animation-duration: 6s;
+  animation-iteration-count: infinite;
+  animation-delay: 1s;
+}
+
+#cloud-1 {
+  left: 30px;
+  top: 15px;
+  width: 40px;
+}
+
+#cloud-2 {
+  left: 44px;
+  top: 10px;
+  width: 20px;
+}
+
+#cloud-3 {
+  left: 18px;
+  top: 24px;
+  width: 30px;
+}
+
+#cloud-4 {
+  left: 36px;
+  top: 18px;
+  width: 40px;
+}
+
+#cloud-5 {
+  left: 48px;
+  top: 14px;
+  width: 20px;
+}
+
+#cloud-6 {
+  left: 22px;
+  top: 26px;
+  width: 30px;
+}
+
+@keyframes cloud-move {
+  0% {
+    transform: translateX(0px);
+  }
+
+  40% {
+    transform: translateX(4px);
+  }
+
+  80% {
+    transform: translateX(-4px);
+  }
+
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.stars {
+  transform: translateY(-32px);
+  opacity: 0;
+  transition: 0.4s;
+}
+
+.star {
+  fill: white;
+  position: absolute;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  animation-name: star-twinkle;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+#input:checked + .slider2 .stars {
+  -webkit-transform: translateY(0);
+  -ms-transform: translateY(0);
+  transform: translateY(0);
+  opacity: 1;
+}
+
+#star-1 {
+  width: 20px;
+  top: 2px;
+  left: 3px;
+  animation-delay: 0.3s;
+}
+
+#star-2 {
+  width: 6px;
+  top: 16px;
+  left: 3px;
+}
+
+#star-3 {
+  width: 12px;
+  top: 20px;
+  left: 10px;
+  animation-delay: 0.6s;
+}
+
+#star-4 {
+  width: 18px;
+  top: 0px;
+  left: 18px;
+  animation-delay: 1.3s;
+}
+
+@keyframes star-twinkle {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.2);
+  }
+
+  80% {
+    transform: scale(0.8);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
