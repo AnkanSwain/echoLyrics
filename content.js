@@ -86,6 +86,58 @@ function debounce(func, delay = 500) {
 
 // Watch for changes in the player bar specifically
 let lastSentData = null;
+let playbackRafId = null;
+let lastCentisecondSent = -1;
+
+function sendPlaybackTimeToSidePanel(playbackTime) {
+  // Checking if extension context is still valid
+  if (!chrome.runtime?.id) {
+    return;
+  }
+
+  try {
+    chrome.runtime.sendMessage(
+      {
+        action: "playbackTimeUpdate",
+        data: {
+          playbackTime,
+        },
+      },
+      () => {
+        // Side panel may be closed; ignore errors
+        if (chrome.runtime.lastError) {
+          return;
+        }
+      },
+    );
+  } catch (error) {
+    console.debug("Failed to send playback time update:", error.message);
+  }
+}
+
+function playbackTick() {
+  const video = document.querySelector("video");
+
+  if (video) {
+    const centiseconds = Math.floor(video.currentTime * 100);
+
+    if (centiseconds !== lastCentisecondSent) {
+      lastCentisecondSent = centiseconds;
+      sendPlaybackTimeToSidePanel(centiseconds / 100);
+    }
+  }
+
+  playbackRafId = requestAnimationFrame(playbackTick);
+}
+
+function startPlaybackTracking() {
+  if (playbackRafId !== null) {
+    cancelAnimationFrame(playbackRafId);
+  }
+
+  lastCentisecondSent = -1;
+  playbackRafId = requestAnimationFrame(playbackTick);
+}
 
 const observer = new MutationObserver((mutations) => {
   // Filter: only react if mutations affect the player bar or its descendants
@@ -154,7 +206,11 @@ function startObserving() {
 
 // Start observing when page loads
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", startObserving);
+  document.addEventListener("DOMContentLoaded", () => {
+    startObserving();
+    startPlaybackTracking();
+  });
 } else {
   startObserving();
+  startPlaybackTracking();
 }

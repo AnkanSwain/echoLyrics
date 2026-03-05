@@ -1,8 +1,18 @@
 const baseUrl = "https://lrclib.net/api/get";
+
 let plainLyricsMode = true;
 let songdata = null;
+let syncedLyricsEntries = [];
+let currentPlaybackTime = 0;
+let activeSyncedLineIndex = -1;
+let syncedLineElements = [];
 
-// Dark mode initialization
+let plainlyriccontent = ``;
+let syncedlyriccontent = ``;
+let errorcontent = `<p class="error">No lyrics available</p>`;
+
+// THEME
+// dark mode initialization
 function initDarkMode() {
   // Check localStorage for saved preference
   const savedTheme = localStorage.getItem("theme") || "light";
@@ -30,7 +40,6 @@ function initDarkMode() {
     applyTheme(savedTheme);
   }
 }
-
 function applyTheme(theme) {
   if (theme === "dark") {
     document.body.classList.add("dark-mode");
@@ -39,8 +48,7 @@ function applyTheme(theme) {
   }
   localStorage.setItem("theme", theme);
 }
-
-// Toggle dark mode
+// theme toggle handler
 document.addEventListener("DOMContentLoaded", () => {
   initDarkMode();
 
@@ -55,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// TOGGLE
 const toggleCheckbox = document.querySelector(
   '#toggleWrapper input[type="checkbox"]',
 );
@@ -63,6 +72,7 @@ toggleCheckbox.addEventListener("change", function () {
   displayLyrics(songdata);
 });
 
+// API CALL
 async function getSongLyrics(songTitle, artist, album = "") {
   try {
     // 1. Build the API endpoint URL with query parameters
@@ -95,7 +105,7 @@ async function getSongLyrics(songTitle, artist, album = "") {
     songdata = data; // storing song data in global variable to use when toggling between synced and plain lyrics without making another API call
 
     // 5. Display the lyrics
-    displayLyrics(data);
+    prepareLyrics(data);
   } catch (error) {
     console.error("Error fetching lyrics:", error);
     document.getElementById("lyrics").innerHTML =
@@ -103,33 +113,80 @@ async function getSongLyrics(songTitle, artist, album = "") {
   }
 }
 
+// PREPARE LYRICS FOR DISPLAY
+function prepareLyrics(data) {
+  // for plain lyrics
+  if (data.plainLyrics) {
+    plainlyriccontent = `<pre>${escapeHtml(data.plainLyrics)}</pre>`;
+  } else if (data.syncedLyrics) {
+    let syncedLyricsText = data.syncedLyrics.replace(/\[.*?\]/g, ""); // Remove timestamps
+    plainlyriccontent = `<pre>${escapeHtml(syncedLyricsText)}</pre>`;
+  } else {
+    plainlyriccontent = ``;
+  }
+
+  // for synced lyrics
+  if (data.syncedLyrics) {
+    syncedLyricsEntries = [];
+    const lines = data.syncedLyrics.split("\n");
+    for (let line of lines) {
+      if (line.trim() === "") continue; // skip empty lines
+      let timeStamp = line.slice(line.indexOf("[") + 1, line.indexOf("]"));
+      let lyricText = line.slice(line.indexOf("]") + 1).trim();
+
+      const seconds = parseTimestampToSeconds(timeStamp);
+      if (Number.isFinite(seconds)) {
+        syncedLyricsEntries.push({
+          seconds,
+          text: lyricText,
+        });
+      }
+    }
+
+    syncedLyricsEntries.sort((a, b) => a.seconds - b.seconds);
+
+    syncedlyriccontent = `<pre>${escapeHtml(data.syncedLyrics)}</pre>`;
+  } else {
+    syncedLyricsEntries = [];
+    syncedlyriccontent = ``;
+  }
+
+  activeSyncedLineIndex = -1;
+  syncedLineElements = [];
+
+  // enabling toggle switch after lyrics are loaded and syncedLyrics are available
+  if (
+    document.getElementById("toggleWrapper").classList.contains("disabled") &&
+    data.syncedLyrics
+  ) {
+    document.getElementById("toggleWrapper").classList.remove("disabled");
+  }
+
+  displayLyrics(data);
+}
+
 function displayLyrics(data) {
+
   // for plain lyrics
   if (plainLyricsMode) {
     if (data.plainLyrics) {
-      document.getElementById("lyrics").innerHTML =
-        `<pre>${escapeHtml(data.plainLyrics)}</pre>`;
+      document.getElementById("lyrics").innerHTML = plainlyriccontent;
       document
         .getElementById("lyrics")
         .setAttribute("style", "overflow-y: auto");
-    } else if (data.syncedLyrics) {
-      let syncedLyricsText = data.syncedLyrics.replace(/\[.*?\]/g, ""); // Remove timestamps
-      document.getElementById("lyrics").innerHTML =
-        `<pre>${escapeHtml(syncedLyricsText)}</pre>`;
     } else {
-      document.getElementById("lyrics").innerHTML =
-        `<p class="error">No lyrics available</p>`;
+      document.getElementById("lyrics").innerHTML = errorcontent;
     }
   }
   // for synced lyrics
   else {
     if (data.syncedLyrics) {
-      ////add code to show lyrics in synced lyrics mode
-      document.getElementById("lyrics").innerHTML =
-        `<pre>${escapeHtml(data.syncedLyrics)}</pre>`;
+      if (syncedLineElements.length === 0) {
+        renderSyncedLyricsList();
+      }
+      updateActiveSyncedLine(currentPlaybackTime);
     } else if (data.plainLyrics) {
-      document.getElementById("lyrics").innerHTML =
-        `<pre>${escapeHtml(data.plainLyrics)}</pre>`;
+      document.getElementById("lyrics").innerHTML = plainlyriccontent;
       document
         .getElementById("lyrics")
         .setAttribute("style", "overflow-y: auto");
@@ -138,16 +195,102 @@ function displayLyrics(data) {
       plainLyricsMode = true;
       toggleCheckbox.dispatchEvent(new Event("change"));
     } else {
-      document.getElementById("lyrics").innerHTML =
-        `<p class="error">No lyrics available</p>`;
+      document.getElementById("lyrics").innerHTML = errorcontent;
     }
   }
-  // enabling toggle switch after lyrics are loaded and syncedLyrics are available
-  if (
-    document.getElementById("toggleWrapper").classList.contains("disabled") &&
-    data.syncedLyrics
-  ) {
-    document.getElementById("toggleWrapper").classList.remove("disabled");
+}
+
+/**
+ * Parses timestamp from format MM:SS.MS to seconds
+ * @param {string} timeStamp - Timestamp in format "00:13.42"
+ * @returns {number} Total seconds with decimal precision
+ */
+function parseTimestampToSeconds(timeStamp) {
+  const parts = timeStamp.split(":");
+
+  if (parts.length !== 2) {
+    return NaN;
+  }
+
+  const minutes = Number(parts[0]);
+  const seconds = Number(parts[1]);
+
+  if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) {
+    return NaN;
+  }
+
+  return minutes * 60 + seconds;
+}
+
+function findSyncedLineIndex(playbackTime) {
+  let lineIndex = -1;
+
+  for (let i = 0; i < syncedLyricsEntries.length; i++) {
+    if (syncedLyricsEntries[i].seconds <= playbackTime) {
+      lineIndex = i;
+    } else {
+      break;
+    }
+  }
+
+  return lineIndex;
+}
+
+function renderSyncedLyricsList() {
+  if (!syncedLyricsEntries.length) {
+    document.getElementById("lyrics").innerHTML = errorcontent;
+    return;
+  }
+
+  const lyricsContainer = document.getElementById("lyrics");
+  lyricsContainer.innerHTML = "";
+  lyricsContainer.setAttribute("style", "overflow-y: auto");
+  
+  const listDiv = document.createElement("div");
+  listDiv.className = "synced-lyrics-list";
+  
+  syncedLineElements = [];
+  
+  syncedLyricsEntries.forEach((entry, index) => {
+    const lineDiv = document.createElement("div");
+    lineDiv.className = "synced-line";
+    lineDiv.textContent = entry.text;
+    lineDiv.dataset.index = index;
+    
+    listDiv.appendChild(lineDiv);
+    syncedLineElements.push(lineDiv);
+  });
+  
+  lyricsContainer.appendChild(listDiv);
+}
+
+function updateActiveSyncedLine(playbackTime) {
+  if (!syncedLineElements.length) {
+    return;
+  }
+
+  const lineIndex = findSyncedLineIndex(playbackTime);
+
+  if (lineIndex === activeSyncedLineIndex) {
+    return;
+  }
+
+  // Remove active class from previous line
+  if (activeSyncedLineIndex >= 0 && syncedLineElements[activeSyncedLineIndex]) {
+    syncedLineElements[activeSyncedLineIndex].classList.remove("active");
+  }
+
+  activeSyncedLineIndex = lineIndex;
+
+  // Add active class to new line
+  if (lineIndex >= 0 && syncedLineElements[lineIndex]) {
+    syncedLineElements[lineIndex].classList.add("active");
+    
+    // Auto-scroll to active line (smooth, centered)
+    syncedLineElements[lineIndex].scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
   }
 }
 
@@ -162,7 +305,11 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// SIDEBAR
 function updateSidePanelWithPageData(data) {
+  currentPlaybackTime = 0;
+  activeSyncedLineIndex = -1;
+
   let songTitleText = data?.songTitle ? data.songTitle.trim() : "Unknown Title";
   let artistText = data?.artist ? data.artist.trim() : "Unknown Artist";
   let albumText = data?.album ? data.album.trim() : "Unknown Album";
@@ -213,6 +360,14 @@ async function getPageDOM() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "domUpdate") {
     updateSidePanelWithPageData(request.data);
+  }
+
+  if (request.action === "playbackTimeUpdate") {
+    currentPlaybackTime = Number(request?.data?.playbackTime ?? 0);
+
+    if (!plainLyricsMode && songdata?.syncedLyrics) {
+      updateActiveSyncedLine(currentPlaybackTime);
+    }
   }
 });
 

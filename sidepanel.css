@@ -127,6 +127,33 @@ body #content #lyrics .error {
   margin-top: 20vh;
 }
 
+/* Synced Lyrics List */
+.synced-lyrics-list {
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.synced-line {
+  font-family: var(--lyrics-font);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  padding: 0.5rem 1rem;
+  margin: 0.25rem 0;
+  color: var(--text-tertiary);
+  transition: color 0.3s ease, background-color 0.3s ease, transform 0.2s ease;
+  border-radius: 4px;
+}
+
+.synced-line.active {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+  transform: scale(1.02);
+  border-left: 3px solid var(--loader-primary);
+  padding-left: calc(1rem - 3px);
+}
+
 body #content hr {
   border-color: var(--border-color);
 }
