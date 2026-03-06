@@ -110,6 +110,7 @@ body #content #lyrics {
   align-items: center;
   max-height: 74vh;
   scrollbar-width: thin;
+  padding: 0 0.2rem 0 0;
 }
 
 body #content #lyrics pre {
@@ -129,8 +130,8 @@ body #content #lyrics .error {
 
 /* Synced Lyrics List */
 .synced-lyrics-list {
-  width: 100%;
-  padding: 0.5rem 0;
+  width: 98%;
+  padding: 0.5rem 0.1rem 0.5rem 0;
 }
 
 .synced-line {
@@ -138,7 +139,7 @@ body #content #lyrics .error {
   font-size: 1.05rem;
   line-height: 1.55;
   letter-spacing: 0.01em;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
   margin: 0.25rem 0;
   color: var(--text-tertiary);
   transition: color 0.3s ease, background-color 0.3s ease, transform 0.2s ease;
@@ -150,8 +151,6 @@ body #content #lyrics .error {
   background-color: var(--bg-secondary);
   font-weight: 600;
   transform: scale(1.02);
-  border-left: 3px solid var(--loader-primary);
-  padding-left: calc(1rem - 3px);
 }
 
 body #content hr {
