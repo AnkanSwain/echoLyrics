@@ -115,6 +115,25 @@ function sendPlaybackTimeToSidePanel(playbackTime) {
   }
 }
 
+function setPlayBackTime(playbackTime) {
+  const video = document.querySelector("video");
+  if (video) {
+    video.currentTime = playbackTime;
+  }
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "setPlaybackTime") {
+    const playbackTime =
+      typeof request?.data?.playbackTime === "number"
+        ? request.data.playbackTime
+        : request.playbackTime;
+    if (typeof playbackTime === "number") {
+      setPlayBackTime(playbackTime);
+    }
+  }
+});
+
 function playbackTick() {
   const video = document.querySelector("video");
 
@@ -174,8 +193,10 @@ const observer = new MutationObserver((mutations) => {
 
       // Only send if data actually changed
       if (
-        JSON.stringify(currentData?.songTitle) !== JSON.stringify(lastSentData?.songTitle) ||
-        JSON.stringify(currentData?.artist) !== JSON.stringify(lastSentData?.artist)
+        JSON.stringify(currentData?.songTitle) !==
+          JSON.stringify(lastSentData?.songTitle) ||
+        JSON.stringify(currentData?.artist) !==
+          JSON.stringify(lastSentData?.artist)
       ) {
         lastSentData = currentData;
         sendUpdateToSidePanel(currentData);

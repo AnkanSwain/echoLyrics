@@ -113,6 +113,48 @@ async function getSongLyrics(songTitle, artist, album = "") {
   }
 }
 
+function sendPlaybackTimeToPage(playbackTime) {
+  // Checking if extension context is still valid
+  if (!chrome.runtime?.id) {
+    return;
+  }
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tabId = tabs?.[0]?.id;
+    if (!tabId) {
+      return;
+    }
+
+    try {
+      chrome.tabs.sendMessage(
+        tabId,
+        {
+          action: "setPlaybackTime",
+          data: {
+            playbackTime,
+          },
+        },
+        () => {
+          // Content script may not be available; ignore errors
+          if (chrome.runtime.lastError) {
+            return;
+          }
+        },
+      );
+    } catch (error) {
+      console.debug("Failed to send playback time set:", error.message);
+    }
+  });
+}
+
+// handle synced lyrics line click
+function handleLineClick(index) {
+  if (index >= 0 && index < syncedLyricsEntries.length) {
+    const seconds = syncedLyricsEntries[index].seconds;
+    sendPlaybackTimeToPage(seconds);
+  }
+}
+
 // PREPARE LYRICS FOR DISPLAY
 function prepareLyrics(data) {
   // for plain lyrics
@@ -144,7 +186,6 @@ function prepareLyrics(data) {
     }
 
     syncedLyricsEntries.sort((a, b) => a.seconds - b.seconds);
-
     syncedlyriccontent = `<pre>${escapeHtml(data.syncedLyrics)}</pre>`;
   } else {
     syncedLyricsEntries = [];
@@ -181,9 +222,7 @@ function displayLyrics(data) {
   // for synced lyrics
   else {
     if (data.syncedLyrics) {
-      if (syncedLineElements.length === 0) {
-        renderSyncedLyricsList();
-      }
+      renderSyncedLyricsList();
       updateActiveSyncedLine(currentPlaybackTime);
     } else if (data.plainLyrics) {
       document.getElementById("lyrics").innerHTML = plainlyriccontent;
@@ -256,6 +295,7 @@ function renderSyncedLyricsList() {
     lineDiv.className = "synced-line";
     lineDiv.textContent = entry.text;
     lineDiv.dataset.index = index;
+    lineDiv.addEventListener("click", () => handleLineClick(index));
     
     listDiv.appendChild(lineDiv);
     syncedLineElements.push(lineDiv);

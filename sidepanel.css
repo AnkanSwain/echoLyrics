@@ -144,6 +144,7 @@ body #content #lyrics .error {
   color: var(--text-tertiary);
   transition: color 0.3s ease, background-color 0.3s ease, transform 0.2s ease;
   border-radius: 4px;
+  cursor: pointer;
 }
 
 .synced-line.active {
